@@ -1,4 +1,5 @@
 .env
+contacts.json
 __pycache__/
 *.pyc
 *.pyo

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Send a text message via Telegram Bot
-Supports sending to specific chat ID or using default
+Supports sending by chat ID, contact name, or using default
 """
 
 import asyncio
@@ -9,14 +9,15 @@ import sys
 import argparse
 from telegram.constants import ParseMode
 from telegram_bot import TelegramBotWrapper
+from contacts import ContactManager
 
 
 async def main():
     """Send message"""
     parser = argparse.ArgumentParser(description='Send a Telegram message')
-    parser.add_argument('--chat-id', type=str, help='Target chat ID')
-    parser.add_argument('--username', type=str, help='Target username (not supported directly, use chat-id)')
-    parser.add_argument('--message', type=str, required=True, help='Message text')
+    parser.add_argument('--to', type=str, help='Contact name or chat ID')
+    parser.add_argument('--chat-id', type=str, help='Target chat ID (deprecated, use --to)')
+    parser.add_argument('--message', '-m', type=str, required=True, help='Message text')
     parser.add_argument('--format', type=str, choices=['markdown', 'html', 'none'],
                         default='none', help='Message format')
     parser.add_argument('--use-default', action='store_true',
@@ -33,20 +34,50 @@ async def main():
 
     # Determine chat ID
     chat_id = None
+    contact_name = None
+
     if args.use_default:
         chat_id = None  # Will use default from bot wrapper
+    elif args.to:
+        # Check if it's a chat ID (numeric or starts with -)
+        if args.to.lstrip('-').isdigit():
+            chat_id = args.to
+        else:
+            # Treat as contact name
+            contact_name = args.to
+            manager = ContactManager()
+            chat_id = manager.get_chat_id(contact_name)
+
+            if chat_id is None:
+                print(f"❌ Contact not found: {contact_name}")
+                print("\n💡 Available contacts:")
+                contacts = manager.list_all()
+                if contacts:
+                    for contact in contacts[:5]:
+                        print(f"   - {contact['name']}")
+                    if len(contacts) > 5:
+                        print(f"   ... and {len(contacts) - 5} more")
+                else:
+                    print("   (none)")
+                print("\n💡 Import contacts: python scripts/contacts.py import")
+                print("💡 Add contact: python scripts/contacts.py add <name> <chat_id>")
+                sys.exit(1)
     elif args.chat_id:
+        # Legacy support
         chat_id = args.chat_id
-    elif args.username:
-        print("❌ Username lookup not supported. Please use --chat-id instead.")
-        print("💡 Tip: Run 'python scripts/list_chats.py' to find chat IDs")
-        sys.exit(1)
 
     if not args.use_default and not chat_id:
-        print("❌ Please specify --chat-id or --use-default")
+        print("❌ Please specify --to <name|chat_id> or --use-default")
+        print("\n💡 Examples:")
+        print("   python scripts/send_message.py --to John -m 'Hello!'")
+        print("   python scripts/send_message.py --to 123456789 -m 'Hello!'")
+        print("   python scripts/send_message.py --use-default -m 'Hello!'")
         sys.exit(1)
 
-    print(f"📤 Sending message...")
+    if contact_name:
+        print(f"📤 Sending message to {contact_name}...")
+    else:
+        print(f"📤 Sending message...")
 
     try:
         bot = TelegramBotWrapper()
@@ -57,6 +88,8 @@ async def main():
         )
 
         print(f"✅ Message sent successfully!")
+        if contact_name:
+            print(f"   To: {contact_name}")
         print(f"   Message ID: {result['message_id']}")
         print(f"   Chat ID: {result['chat_id']}")
         print(f"   Time: {result['date']}")
