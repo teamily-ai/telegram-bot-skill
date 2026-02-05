@@ -1,6 +1,6 @@
 ---
 name: telegram-bot-agent
-description: Comprehensive Telegram Bot management for Claude agents. Use when the user needs to: (1) Create or configure Telegram bots, (2) Send messages to users or groups BY NAME (e.g. "message John" or "send to the dev team"), (3) Manage contacts, (4) Join groups or channels, (5) Handle Telegram notifications, or any other Telegram bot automation tasks. Users naturally reference contacts by name, NOT by chat ID.
+description: "Comprehensive Telegram Bot management for Claude agents. Use when the user needs to: (1) Create or configure Telegram bots, (2) Send messages to users or groups BY NAME (e.g. 'message John' or 'send to the dev team'), (3) Manage contacts, (4) Join groups or channels, (5) Handle Telegram notifications, or any other Telegram bot automation tasks. Users naturally reference contacts by name, NOT by chat ID."
 ---
 
 # Telegram Bot Agent
